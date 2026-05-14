@@ -8,11 +8,6 @@
 [![TensorFlow 2.10+](https://img.shields.io/badge/TensorFlow-2.10%2B-orange)](https://www.tensorflow.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Authors:** [Saransh Mishra](#authors) | [Satyam Chaubey](#authors) | [Abhiraj Singh](#authors)  
-**Supervisor:** Dr. Prabha S. Nair  
-**Institution:** Noida Institute of Engineering and Technology (NIET), Greater Noida  
-**Department:** Information Technology
-
 [🎯 Quick Start](#-quick-start) • [📖 Documentation](#-documentation) • [🔬 Methodology](#-methodology) • [📊 Results](#-results)
 
 </div>
