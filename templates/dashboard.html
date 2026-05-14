@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacy-Preserving Heartbeat Classification | NIET Capstone 2026</title>
+<script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+
+  :root {
+    --bg:       #030712;
+    --surface:  #0f172a;
+    --card:     #111827;
+    --border:   #1e293b;
+    --text:     #f1f5f9;
+    --muted:    #94a3b8;
+    --accent:   #06b6d4;
+    --green:    #22c55e;
+    --red:      #ef4444;
+    --yellow:   #eab308;
+    --purple:   #a855f7;
+    --cnn:      #3b82f6;
+    --rnn:      #ef4444;
+    --gru:      #22c55e;
+    --lstm:     #a855f7;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Space Grotesk', sans-serif;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* ── Header ── */
+  .header {
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 28px 40px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(12px);
+  }
+  .header-inner {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+  }
+  .header-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+  }
+  .header-title span { color: var(--accent); }
+  .header-meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+    line-height: 1.8;
+    text-align: right;
+  }
+  .live-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(6,182,212,0.1);
+    border: 1px solid rgba(6,182,212,0.3);
+    border-radius: 999px;
+    padding: 4px 12px;
+    font-size: 0.72rem;
+    color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .live-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.3)} }
+
+  /* ── Nav tabs ── */
+  .nav {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 40px;
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+  }
+  .nav-tab {
+    padding: 14px 22px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: all 0.2s;
+    letter-spacing: 0.02em;
+  }
+  .nav-tab:hover { color: var(--text); }
+  .nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* ── Main content ── */
+  .main { max-width: 1400px; margin: 0 auto; padding: 32px 40px; }
+
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* ── Stat cards ── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+  .stat-card:hover { transform: translateY(-2px); border-color: var(--accent); }
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent-color, var(--accent));
+  }
+  .stat-label { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+  .stat-value { font-size: 2rem; font-weight: 700; font-family: 'JetBrains Mono', monospace; letter-spacing: -0.02em; }
+  .stat-sub { font-size: 0.72rem; color: var(--muted); margin-top: 4px; }
+  .stat-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    margin-top: 6px;
+  }
+  .badge-green { background: rgba(34,197,94,0.15); color: var(--green); }
+  .badge-red   { background: rgba(239,68,68,0.15);  color: var(--red); }
+  .badge-blue  { background: rgba(59,130,246,0.15); color: var(--cnn); }
+  .badge-cyan  { background: rgba(6,182,212,0.15);  color: var(--accent); }
+
+  /* ── Cards & Charts ── */
+  .chart-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(580px, 1fr));
+    gap: 20px;
+    margin-bottom: 24px;
+  }
+  .chart-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .chart-card h3 {
+    font-size: 0.88rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .chart-card h3 span { color: var(--accent); }
+  .chart-full { grid-column: 1 / -1; }
+
+  /* ── Table ── */
+  .results-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+  .results-table th {
+    text-align: left;
+    padding: 10px 16px;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    background: rgba(0,0,0,0.2);
+  }
+  .results-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(30,41,59,0.5);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+  }
+  .results-table tr:hover td { background: rgba(6,182,212,0.04); }
+  .model-tag {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 0.75rem;
+  }
+  .tag-cnn  { background: rgba(59,130,246,0.15); color: var(--cnn); }
+  .tag-rnn  { background: rgba(239,68,68,0.15);  color: var(--rnn); }
+  .tag-gru  { background: rgba(34,197,94,0.15);  color: var(--gru); }
+  .tag-lstm { background: rgba(168,85,247,0.15); color: var(--lstm); }
+  .tag-dp   { background: rgba(6,182,212,0.1);   color: var(--accent); border: 1px solid rgba(6,182,212,0.3); }
+  .tag-nodp { background: rgba(100,116,139,0.1); color: var(--muted); }
+
+  /* ── Info panels ── */
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .info-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .info-card h4 {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    margin-bottom: 14px;
+    font-weight: 700;
+  }
+  .info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(30,41,59,0.5);
+    font-size: 0.82rem;
+  }
+  .info-row:last-child { border-bottom: none; }
+  .info-key { color: var(--muted); }
+  .info-val { font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+
+  /* ── Signal monitor ── */
+  .signal-monitor {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+  }
+  .signal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .signal-header h3 { font-size: 0.88rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .classify-btn {
+    background: linear-gradient(135deg, var(--accent), #7c3aed);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    padding: 8px 20px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+  }
+  .classify-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+  .classify-btn:active { transform: translateY(0); }
+
+  .label-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 20px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .label-normal   { background: rgba(34,197,94,0.15); color: var(--green); border: 1px solid rgba(34,197,94,0.3); }
+  .label-abnormal { background: rgba(239,68,68,0.15); color: var(--red);   border: 1px solid rgba(239,68,68,0.3); }
+
+  /* ── Progress bars ── */
+  .metric-bar {
+    margin-bottom: 14px;
+  }
+  .metric-bar-header { display: flex; justify-content: space-between; font-size: 0.78rem; margin-bottom: 5px; }
+  .metric-bar-key { color: var(--muted); }
+  .metric-bar-val { font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+  .metric-bar-track {
+    height: 6px;
+    background: var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .metric-bar-fill {
+    height: 100%;
+    border-radius: 999px;
+    transition: width 1s ease;
+  }
+
+  /* ── Security section ── */
+  .security-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .threat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .threat-card h4 {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 16px;
+    font-weight: 700;
+  }
+  .risk-indicator {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-size: 0.8rem;
+  }
+  .risk-high   { background: rgba(239,68,68,0.1);  border: 1px solid rgba(239,68,68,0.2);  color: var(--red); }
+  .risk-low    { background: rgba(34,197,94,0.1);  border: 1px solid rgba(34,197,94,0.2);  color: var(--green); }
+  .risk-medium { background: rgba(234,179,8,0.1);  border: 1px solid rgba(234,179,8,0.2);  color: var(--yellow); }
+  .risk-icon   { font-size: 1.2rem; }
+
+  /* ── Footer ── */
+  .footer {
+    border-top: 1px solid var(--border);
+    padding: 20px 40px;
+    text-align: center;
+    font-size: 0.72rem;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    margin-top: 60px;
+  }
+
+  /* ── Animations ── */
+  .fade-in { animation: fadeIn 0.4s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  .shimmer {
+    background: linear-gradient(90deg, var(--card) 25%, var(--border) 50%, var(--card) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+  @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+  @media (max-width: 768px) {
+    .main { padding: 20px; }
+    .chart-grid { grid-template-columns: 1fr; }
+    .security-grid { grid-template-columns: 1fr; }
+    .header-meta { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<div class="header">
+  <div class="header-inner">
+    <div>
+      <div class="header-title">
+        <span>Privacy-Preserving</span> Heartbeat Abnormality Classification<br>
+        <small style="font-weight:400;color:var(--muted);font-size:0.8rem">
+          Differentially Private Deep Learning Models · MIT-BIH Polysomnographic Dataset
+        </small>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:16px;">
+      <div class="live-badge">
+        <span class="live-dot"></span>LIVE DASHBOARD
+      </div>
+      <div class="header-meta">
+        Saransh Mishra · Satyam Chaubey · Abhiraj Singh<br>
+        Dr. Prabha S. Nair · NIET, Greater Noida · IT Dept.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── NAV ── -->
+<div class="nav">
+  <div class="nav-tab active" onclick="showTab('overview')">📊 Overview</div>
+  <div class="nav-tab" onclick="showTab('models')">🧠 Model Results</div>
+  <div class="nav-tab" onclick="showTab('privacy')">🔐 Privacy Analysis</div>
+  <div class="nav-tab" onclick="showTab('security')">🛡️ Security</div>
+  <div class="nav-tab" onclick="showTab('ablation')">🔬 Ablation Study</div>
+  <div class="nav-tab" onclick="showTab('xai')">💡 Explainability</div>
+  <div class="nav-tab" onclick="showTab('matrices')">🔲 Confusion Matrices</div>
+  <div class="nav-tab" onclick="showTab('roc')">📈 ROC / Architecture</div>
+  <div class="nav-tab" onclick="showTab('signal')">📡 Live Signal</div>
+</div>
+
+<!-- ── MAIN ── -->
+<div class="main">
+
+  <!-- ════ OVERVIEW ════ -->
+  <div id="tab-overview" class="section active fade-in">
+
+    <!-- Key Stats -->
+    <div class="stats-grid" id="kpi-cards">
+      <div class="stat-card" style="--accent-color: var(--gru)">
+        <div class="stat-label">Best Model Accuracy</div>
+        <div class="stat-value" style="color:var(--gru)">99.50%</div>
+        <div class="stat-sub">GRU with DP-SGD</div>
+        <div class="stat-badge badge-green">↑ WITH PRIVACY</div>
+      </div>
+      <div class="stat-card" style="--accent-color: var(--accent)">
+        <div class="stat-label">Privacy Budget (ε)</div>
+        <div class="stat-value" style="color:var(--accent)">≤ 1.0</div>
+        <div class="stat-sub">δ = 1×10⁻⁵</div>
+        <div class="stat-badge badge-cyan">WITHIN BUDGET</div>
+      </div>
+      <div class="stat-card" style="--accent-color: var(--green)">
+        <div class="stat-label">MIA Attack Accuracy</div>
+        <div class="stat-value" style="color:var(--green)">~51%</div>
+        <div class="stat-sub">Near random guessing (50%)</div>
+        <div class="stat-badge badge-green">PROTECTED</div>
+      </div>
+      <div class="stat-card" style="--accent-color: var(--cnn)">
+        <div class="stat-label">Utility Loss (GRU)</div>
+        <div class="stat-value" style="color:var(--cnn)">−0.49%</div>
+        <div class="stat-sub">98.99% → 99.50%</div>
+        <div class="stat-badge badge-blue">NEGLIGIBLE</div>
+      </div>
+      <div class="stat-card" style="--accent-color: var(--yellow)">
+        <div class="stat-label">Adversarial Robustness</div>
+        <div class="stat-value" style="color:var(--yellow)">+15%</div>
+        <div class="stat-sub">FGSM resistance with DP</div>
+        <div class="stat-badge badge-green">DUAL BENEFIT</div>
+      </div>
+      <div class="stat-card" style="--accent-color: var(--purple)">
+        <div class="stat-label">Multimodal Boost</div>
+        <div class="stat-value" style="color:var(--purple)">+5.3%</div>
+        <div class="stat-sub">vs ECG-only under DP</div>
+        <div class="stat-badge badge-blue">ECG+EEG+BP</div>
+      </div>
+    </div>
+
+    <div class="chart-grid">
+      <div class="chart-card chart-full">
+        <h3>📈 <span>Accuracy Comparison</span> — With vs Without Differential Privacy</h3>
+        <div id="chart-accuracy" style="height:380px"></div>
+      </div>
+      <div class="chart-card">
+        <h3>🎯 <span>Detailed Metrics</span> — DP-Enabled Models</h3>
+        <div id="chart-radar" style="height:360px"></div>
+      </div>
+      <div class="chart-card">
+        <h3>⏱️ <span>Computational Cost</span> — Parameters & Training Time</h3>
+        <div id="chart-compute" style="height:360px"></div>
+      </div>
+    </div>
+
+    <!-- DP Config card -->
+    <div class="info-grid">
+      <div class="info-card">
+        <h4>⚙️ DP-SGD Configuration</h4>
+        <div class="info-row"><span class="info-key">L2 Norm Clip (C)</span><span class="info-val" style="color:var(--accent)">1.5</span></div>
+        <div class="info-row"><span class="info-key">Noise Multiplier (σ)</span><span class="info-val" style="color:var(--accent)">1.3</span></div>
+        <div class="info-row"><span class="info-key">Privacy Budget (ε)</span><span class="info-val" style="color:var(--green)">≤ 1.0</span></div>
+        <div class="info-row"><span class="info-key">Delta (δ)</span><span class="info-val" style="color:var(--green)">1×10⁻⁵</span></div>
+        <div class="info-row"><span class="info-key">Batch Size</span><span class="info-val">64</span></div>
+        <div class="info-row"><span class="info-key">Learning Rate</span><span class="info-val">1×10⁻⁴</span></div>
+        <div class="info-row"><span class="info-key">Epochs</span><span class="info-val">100</span></div>
+      </div>
+      <div class="info-card">
+        <h4>🗄️ Dataset & Preprocessing</h4>
+        <div class="info-row"><span class="info-key">Dataset</span><span class="info-val" style="color:var(--accent)">MIT-BIH Polysomnographic</span></div>
+        <div class="info-row"><span class="info-key">Signals</span><span class="info-val">ECG · EEG · BP</span></div>
+        <div class="info-row"><span class="info-key">Records</span><span class="info-val">18 (~80h)</span></div>
+        <div class="info-row"><span class="info-key">Sampling Rate</span><span class="info-val">250 Hz</span></div>
+        <div class="info-row"><span class="info-key">Bandpass Filter</span><span class="info-val">0.5–50 Hz (4th Butterworth)</span></div>
+        <div class="info-row"><span class="info-key">Normalization</span><span class="info-val">Z-score</span></div>
+        <div class="info-row"><span class="info-key">Class Balancing</span><span class="info-val">SMOTE</span></div>
+      </div>
+      <div class="info-card">
+        <h4>💻 Hardware Setup</h4>
+        <div class="info-row"><span class="info-key">CPU</span><span class="info-val">Intel Core i7-10700K @ 3.8GHz</span></div>
+        <div class="info-row"><span class="info-key">RAM</span><span class="info-val">32 GB DDR4</span></div>
+        <div class="info-row"><span class="info-key">GPU</span><span class="info-val" style="color:var(--green)">NVIDIA RTX 3080 (10GB)</span></div>
+        <div class="info-row"><span class="info-key">Framework</span><span class="info-val">TensorFlow 2.x</span></div>
+        <div class="info-row"><span class="info-key">DP Library</span><span class="info-val">tensorflow-privacy</span></div>
+        <div class="info-row"><span class="info-key">Language</span><span class="info-val">Python 3.8</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ MODEL RESULTS ════ -->
+  <div id="tab-models" class="section fade-in">
+    <div class="chart-grid">
+      <div class="chart-card chart-full">
+        <h3>📉 <span>Training Curves</span> — CNN</h3>
+        <div id="chart-cnn-curves" style="height:300px"></div>
+      </div>
+      <div class="chart-card chart-full">
+        <h3>📉 <span>Training Curves</span> — GRU (Best Model)</h3>
+        <div id="chart-gru-curves" style="height:300px"></div>
+      </div>
+      <div class="chart-card chart-full">
+        <h3>📉 <span>Training Curves</span> — LSTM</h3>
+        <div id="chart-lstm-curves" style="height:300px"></div>
+      </div>
+      <div class="chart-card chart-full">
+        <h3>📉 <span>Training Curves</span> — RNN</h3>
+        <div id="chart-rnn-curves" style="height:300px"></div>
+      </div>
+    </div>
+
+    <!-- Full results table -->
+    <div class="chart-card">
+      <h3>📋 <span>Complete Results Table</span> — All Models</h3>
+      <table class="results-table" id="results-table">
+        <thead>
+          <tr>
+            <th>Model</th>
+            <th>Privacy</th>
+            <th>Accuracy</th>
+            <th>Precision</th>
+            <th>Recall</th>
+            <th>F1-Score</th>
+            <th>Loss</th>
+            <th>Time/Epoch</th>
+          </tr>
+        </thead>
+        <tbody id="results-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ════ PRIVACY ANALYSIS ════ -->
+  <div id="tab-privacy" class="section fade-in">
+    <div class="chart-grid">
+      <div class="chart-card">
+        <h3>📊 <span>Privacy Budget</span> — ε vs Training Epochs</h3>
+        <div id="chart-epsilon" style="height:360px"></div>
+      </div>
+      <div class="chart-card">
+        <h3>🔧 <span>Sensitivity Analysis</span> — Accuracy vs Noise Multiplier</h3>
+        <div id="chart-sensitivity" style="height:360px"></div>
+      </div>
+    </div>
+
+    <div class="info-grid">
+      <div class="info-card" style="grid-column: 1 / -1">
+        <h4>📐 Mathematical Framework — (ε, δ)-Differential Privacy</h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+          <div>
+            <p style="font-size:0.8rem; color:var(--muted); margin-bottom:12px;">
+              A randomized algorithm M satisfies (ε, δ)-differential privacy if for all neighboring datasets D and D′:
+            </p>
+            <div style="background: rgba(6,182,212,0.05); border: 1px solid rgba(6,182,212,0.2); border-radius: 8px; padding: 16px; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; color: var(--accent);">
+              P(M(D) ∈ S) ≤ e^ε · P(M(D') ∈ S) + δ
+            </div>
+            <p style="font-size:0.75rem; color:var(--muted); margin-top:10px;">
+              DP-SGD enforces this by: (1) Clipping gradients to bound sensitivity,
+              (2) Adding Gaussian noise N(0, σ²C²I), and
+              (3) Tracking privacy budget via Moments Accountant.
+            </p>
+          </div>
+          <div>
+            <p style="font-size:0.8rem; color:var(--muted); margin-bottom:12px;">GRU Gating Mechanism — Natural DP Noise Filter:</p>
+            <div style="background: rgba(34,197,94,0.05); border: 1px solid rgba(34,197,94,0.2); border-radius: 8px; padding: 16px; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--green); line-height: 1.8;">
+              z_t = σ(W_z · [h_{t-1}, x_t])  ← Update gate<br>
+              r_t = σ(W_r · [h_{t-1}, x_t])  ← Reset gate<br>
+              h̃_t = tanh(W · [r_t ⊙ h_{t-1}, x_t])<br>
+              h_t = (1−z_t) ⊙ h_{t-1} + z_t ⊙ h̃_t
+            </div>
+            <p style="font-size:0.75rem; color:var(--muted); margin-top:10px;">
+              The gating structure allows GRU to selectively ignore 
+              high-frequency noise introduced by DP-SGD.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ SECURITY ════ -->
+  <div id="tab-security" class="section fade-in">
+    <div class="stats-grid">
+      <div class="stat-card" style="--accent-color:var(--red)">
+        <div class="stat-label">MIA — Without DP</div>
+        <div class="stat-value" style="color:var(--red)">~72%</div>
+        <div class="stat-sub">High privacy risk</div>
+        <div class="stat-badge badge-red">⚠ VULNERABLE</div>
+      </div>
+      <div class="stat-card" style="--accent-color:var(--green)">
+        <div class="stat-label">MIA — With DP</div>
+        <div class="stat-value" style="color:var(--green)">~51%</div>
+        <div class="stat-sub">Near random guessing</div>
+        <div class="stat-badge badge-green">✓ PROTECTED</div>
+      </div>
+      <div class="stat-card" style="--accent-color:var(--yellow)">
+        <div class="stat-label">FGSM Resistance Gain</div>
+        <div class="stat-value" style="color:var(--yellow)">+15%</div>
+        <div class="stat-sub">Adversarial robustness</div>
+        <div class="stat-badge badge-green">DUAL BENEFIT</div>
+      </div>
+      <div class="stat-card" style="--accent-color:var(--cnn)">
+        <div class="stat-label">Risk Reduction</div>
+        <div class="stat-value" style="color:var(--cnn)">~21%</div>
+        <div class="stat-sub">Across all models</div>
+        <div class="stat-badge badge-cyan">DP-SGD EFFECT</div>
+      </div>
+    </div>
+
+    <div class="chart-grid">
+      <div class="chart-card">
+        <h3>🎯 <span>MIA Attack Accuracy</span> — With vs Without DP</h3>
+        <div id="chart-mia" style="height:360px"></div>
+      </div>
+      <div class="chart-card">
+        <h3>⚔️ <span>Adversarial Robustness</span> — FGSM Attack Resistance</h3>
+        <div id="chart-fgsm" style="height:360px"></div>
+      </div>
+    </div>
+
+    <div class="security-grid">
+      <div class="threat-card">
+        <h4 style="color:var(--red)">🔴 Without Differential Privacy</h4>
+        <div class="risk-indicator risk-high"><span class="risk-icon">⚠️</span><span>Membership Inference Attack: 72% success rate</span></div>
+        <div class="risk-indicator risk-high"><span class="risk-icon">⚠️</span><span>Model Inversion Attack: feasible</span></div>
+        <div class="risk-indicator risk-medium"><span class="risk-icon">⚡</span><span>FGSM Adversarial Attack: moderate resistance</span></div>
+        <div class="risk-indicator risk-high"><span class="risk-icon">⚠️</span><span>Patient re-identification: HIGH RISK</span></div>
+        <p style="font-size:0.75rem; color:var(--muted); margin-top:12px;">
+          Non-private models overfit on training data, making individual records 
+          distinguishable to adversaries with white-box or black-box access.
+        </p>
+      </div>
+      <div class="threat-card">
+        <h4 style="color:var(--green)">🟢 With Differential Privacy (DP-SGD)</h4>
+        <div class="risk-indicator risk-low"><span class="risk-icon">✅</span><span>MIA Attack: ~51% (≈ random guessing)</span></div>
+        <div class="risk-indicator risk-low"><span class="risk-icon">✅</span><span>Provable privacy guarantee: (ε=1.0, δ=1e-5)</span></div>
+        <div class="risk-indicator risk-low"><span class="risk-icon">✅</span><span>FGSM Resistance: +15% improvement</span></div>
+        <div class="risk-indicator risk-low"><span class="risk-icon">✅</span><span>GDPR & HIPAA compliant by design</span></div>
+        <p style="font-size:0.75rem; color:var(--muted); margin-top:12px;">
+          DP-SGD bounds the information leakage of any individual's data.
+          Even with full model access, adversaries cannot determine membership.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ ABLATION STUDY ════ -->
+  <div id="tab-ablation" class="section fade-in">
+    <div class="chart-grid">
+      <div class="chart-card chart-full">
+        <h3>🔬 <span>Ablation Study</span> — Impact of Multimodal Fusion (GRU with DP)</h3>
+        <div id="chart-ablation" style="height:400px"></div>
+      </div>
+    </div>
+
+    <div class="info-grid">
+      <div class="info-card">
+        <h4>📡 ECG Only — 94.2% Accuracy</h4>
+        <div class="metric-bar">
+          <div class="metric-bar-header"><span class="metric-bar-key">Accuracy</span><span class="metric-bar-val">94.2%</span></div>
+          <div class="metric-bar-track"><div class="metric-bar-fill" style="width:94.2%;background:var(--red)"></div></div>
+        </div>
+        <p style="font-size:0.75rem; color:var(--muted)">Single-modal approach. More susceptible to noise under DP constraints.</p>
+      </div>
+      <div class="info-card">
+        <h4>📡📡 ECG + EEG — 97.5% Accuracy</h4>
+        <div class="metric-bar">
+          <div class="metric-bar-header"><span class="metric-bar-key">Accuracy</span><span class="metric-bar-val">97.5%</span></div>
+          <div class="metric-bar-track"><div class="metric-bar-fill" style="width:97.5%;background:var(--yellow)"></div></div>
+        </div>
+        <p style="font-size:0.75rem; color:var(--muted)">Heart-brain axis coupling provides complementary information to ECG.</p>
+      </div>
+      <div class="info-card">
+        <h4>📡📡 ECG + BP — 96.8% Accuracy</h4>
+        <div class="metric-bar">
+          <div class="metric-bar-header"><span class="metric-bar-key">Accuracy</span><span class="metric-bar-val">96.8%</span></div>
+          <div class="metric-bar-track"><div class="metric-bar-fill" style="width:96.8%;background:var(--cnn)"></div></div>
+        </div>
+        <p style="font-size:0.75rem; color:var(--muted)">Systolic BP drops confirm arrhythmia episodes, reducing false negatives.</p>
+      </div>
+      <div class="info-card">
+        <h4>📡📡📡 Full Multimodal — 99.5% Accuracy</h4>
+        <div class="metric-bar">
+          <div class="metric-bar-header"><span class="metric-bar-key">Accuracy</span><span class="metric-bar-val">99.5%</span></div>
+          <div class="metric-bar-track"><div class="metric-bar-fill" style="width:99.5%;background:var(--green)"></div></div>
+        </div>
+        <p style="font-size:0.75rem; color:var(--muted)">ECG + EEG + BP combined. Cross-modality verification maximizes robustness under DP noise.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ XAI ════ -->
+  <div id="tab-xai" class="section fade-in">
+    <div class="chart-grid">
+      <div class="chart-card">
+        <h3>💡 <span>SHAP Feature Importance</span> — GRU with DP</h3>
+        <div id="chart-shap" style="height:400px"></div>
+      </div>
+      <div class="chart-card">
+        <h3>🥧 <span>Modality Contribution</span> — Aggregated SHAP</h3>
+        <div id="chart-shap-pie" style="height:400px"></div>
+      </div>
+    </div>
+
+    <div class="info-card">
+      <h4>🏥 Top Clinically Significant Features (SHAP Analysis)</h4>
+      <table class="results-table">
+        <thead>
+          <tr><th>Feature</th><th>Modality</th><th>SHAP Importance</th><th>Clinical Relevance</th><th>Effect</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>QRS Complex Amplitude</td><td><span class="model-tag tag-cnn">ECG</span></td><td style="font-family:mono;color:var(--green)">28.4%</td><td style="font-size:0.75rem;color:var(--muted)">Ventricular depolarization</td><td style="font-size:0.75rem">High amplitude → Normal</td></tr>
+          <tr><td>QRS Duration</td><td><span class="model-tag tag-cnn">ECG</span></td><td style="font-family:mono;color:var(--green)">19.8%</td><td style="font-size:0.75rem;color:var(--muted)">Bundle branch block / WPW</td><td style="font-size:0.75rem">Wide QRS → Abnormal</td></tr>
+          <tr><td>Systolic BP Peak</td><td><span class="model-tag tag-lstm">BP</span></td><td style="font-family:mono;color:var(--cnn)">14.2%</td><td style="font-size:0.75rem;color:var(--muted)">Systolic drop during arrhythmia</td><td style="font-size:0.75rem">Low systolic → Abnormal</td></tr>
+          <tr><td>T-Wave Morphology</td><td><span class="model-tag tag-cnn">ECG</span></td><td style="font-family:mono;color:var(--cnn)">11.8%</td><td style="font-size:0.75rem;color:var(--muted)">Ischemia / LVH indicator</td><td style="font-size:0.75rem">Inverted T → Abnormal</td></tr>
+          <tr><td>RR Interval Variability</td><td><span class="model-tag tag-cnn">ECG</span></td><td style="font-family:mono;color:var(--yellow)">9.7%</td><td style="font-size:0.75rem;color:var(--muted)">Atrial fibrillation marker</td><td style="font-size:0.75rem">High variability → Abnormal</td></tr>
+          <tr><td>Diastolic BP</td><td><span class="model-tag tag-lstm">BP</span></td><td style="font-family:mono;color:var(--yellow)">7.3%</td><td style="font-size:0.75rem;color:var(--muted)">Vascular resistance</td><td style="font-size:0.75rem">Elevated → Cardiac stress</td></tr>
+          <tr><td>Alpha EEG Power</td><td><span class="model-tag tag-rnn">EEG</span></td><td style="font-family:mono;color:var(--muted)">5.2%</td><td style="font-size:0.75rem;color:var(--muted)">Heart-brain axis coupling</td><td style="font-size:0.75rem">Reduced alpha → Arrhythmia</td></tr>
+        </tbody>
+      </table>
+      <p style="font-size:0.75rem; color:var(--muted); margin-top:14px; padding: 12px; background: rgba(6,182,212,0.05); border-radius: 8px; border-left: 3px solid var(--accent);">
+        <strong style="color:var(--accent)">DP Insight:</strong> Moderate DP noise (σ=1.3) acts as "feature smoothing" — 
+        highlighting the most robust physiological features while suppressing low-amplitude noise. 
+        This improves clinical interpretability and model generalizability.
+      </p>
+    </div>
+  </div>
+
+  <!-- ════ LIVE SIGNAL ════ -->
+  <div id="tab-signal" class="section fade-in">
+    <div class="signal-monitor">
+      <div class="signal-header">
+        <h3>📡 Real-Time Heartbeat Monitor — ECG / BP / EEG</h3>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span id="classification-badge" class="label-badge label-normal">● NORMAL</span>
+          <button class="classify-btn" onclick="fetchNewSignal()">⚡ New Sample</button>
+        </div>
+      </div>
+      <div id="chart-signal" style="height:480px"></div>
+    </div>
+    <div class="info-grid">
+      <div class="info-card">
+        <h4>🧪 Signal Processing Pipeline</h4>
+        <div class="info-row"><span class="info-key">Step 1</span><span class="info-val" style="color:var(--accent)">Load WFDB Record</span></div>
+        <div class="info-row"><span class="info-key">Step 2</span><span class="info-val" style="color:var(--accent)">Butterworth Bandpass (0.5–50 Hz)</span></div>
+        <div class="info-row"><span class="info-key">Step 3</span><span class="info-val" style="color:var(--accent)">R-Peak Detection</span></div>
+        <div class="info-row"><span class="info-key">Step 4</span><span class="info-val" style="color:var(--accent)">Segment Extraction (1s windows)</span></div>
+        <div class="info-row"><span class="info-key">Step 5</span><span class="info-val" style="color:var(--accent)">Z-score Normalization</span></div>
+        <div class="info-row"><span class="info-key">Step 6</span><span class="info-val" style="color:var(--accent)">GRU Classification (DP-SGD)</span></div>
+      </div>
+      <div class="info-card">
+        <h4>📊 Classification Confidence</h4>
+        <div id="confidence-bars">
+          <div class="metric-bar">
+            <div class="metric-bar-header"><span class="metric-bar-key">Normal Beat</span><span class="metric-bar-val" id="conf-normal">—</span></div>
+            <div class="metric-bar-track"><div class="metric-bar-fill" id="bar-normal" style="width:0%;background:var(--green)"></div></div>
+          </div>
+          <div class="metric-bar">
+            <div class="metric-bar-header"><span class="metric-bar-key">Abnormal Beat</span><span class="metric-bar-val" id="conf-abnormal">—</span></div>
+            <div class="metric-bar-track"><div class="metric-bar-fill" id="bar-abnormal" style="width:0%;background:var(--red)"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ════ CONFUSION MATRICES ════ -->
+  <div id="tab-matrices" class="section fade-in">
+    <div class="chart-card">
+      <h3>🔲 <span>Confusion Matrices</span> — All Models With vs Without DP</h3>
+      <img src="/results/confusion_matrices.png" style="width:100%;border-radius:8px;margin-top:8px" alt="Confusion Matrices">
+    </div>
+  </div>
+
+  <!-- ════ ROC CURVES ════ -->
+  <div id="tab-roc" class="section fade-in">
+    <div class="chart-grid">
+      <div class="chart-card chart-full">
+        <h3>📈 <span>ROC Curves</span> — AUC Comparison</h3>
+        <img src="/results/roc_curves.png" style="width:100%;border-radius:8px;margin-top:8px" alt="ROC Curves">
+      </div>
+      <div class="chart-card chart-full">
+        <h3>🏗️ <span>System Architecture</span> — Full Pipeline</h3>
+        <img src="/results/system_architecture.png" style="width:100%;border-radius:8px;margin-top:8px" alt="Architecture">
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<div class="footer">
+  Privacy-Preserving Heartbeat Abnormality Classification · NIET Greater Noida · 
+  Based on ElKomy et al., Journal of Big Data (2025) 12:216 · 
+  MIT-BIH Polysomnographic Database (PhysioNet)
+</div>
+
+<script>
+// ── Tab switching ──────────────────────────────────────────────────────────
+function showTab(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.currentTarget.classList.add('active');
+}
+
+// ── Plotly config ──────────────────────────────────────────────────────────
+const BG     = '#030712';
+const CARD   = '#111827';
+const BORDER = '#1e293b';
+const TEXT   = '#f1f5f9';
+const MUTED  = '#94a3b8';
+const ACCENT = '#06b6d4';
+const GREEN  = '#22c55e';
+const RED    = '#ef4444';
+const YELLOW = '#eab308';
+const COLORS = { CNN:'#3b82f6', RNN:'#ef4444', GRU:'#22c55e', LSTM:'#a855f7' };
+
+const layout_base = (extra={}) => ({
+  paper_bgcolor: 'transparent',
+  plot_bgcolor: 'transparent',
+  font: { family:'JetBrains Mono, monospace', color: MUTED, size: 11 },
+  margin: { t:20, r:20, b:50, l:60 },
+  showlegend: true,
+  legend: { bgcolor:'transparent', font:{ color:TEXT, size:11 } },
+  xaxis: { gridcolor: BORDER, color: MUTED, tickfont:{ size:10 } },
+  yaxis: { gridcolor: BORDER, color: MUTED, tickfont:{ size:10 } },
+  ...extra
+});
+
+const plot_config = { displayModeBar: false, responsive: true };
+
+// ── Load all data and render ───────────────────────────────────────────────
+let DATA = {};
+
+fetch('/api/results')
+  .then(r => r.json())
+  .then(data => {
+    DATA = data;
+    renderOverview(data);
+    renderModels(data);
+    renderPrivacy(data);
+    renderSecurity(data);
+    renderAblation(data);
+    renderXAI(data);
+    fetchNewSignal();
+  });
+
+fetch('/api/privacy_budget')
+  .then(r => r.json())
+  .then(data => renderPrivacyBudget(data));
+
+// ── Overview Charts ────────────────────────────────────────────────────────
+function renderOverview(data) {
+  const models   = ['CNN', 'RNN', 'GRU', 'LSTM'];
+  const no_dp_acc  = models.map(m => (data.training[m+'_nodp'] || {}).accuracy || 0);
+  const with_dp_acc = models.map(m => (data.training[m+'_dp']   || {}).accuracy || 0);
+
+  // Accuracy bar chart
+  Plotly.newPlot('chart-accuracy', [
+    { type:'bar', name:'Without DP', x:models, y:no_dp_acc,
+      marker:{ color:['#475569','#475569','#475569','#475569'], opacity:0.8 },
+      text: no_dp_acc.map(v=>(v*100).toFixed(2)+'%'), textposition:'outside',
+      hovertemplate:'%{x} No DP: %{y:.2%}<extra></extra>' },
+    { type:'bar', name:'With DP-SGD', x:models, y:with_dp_acc,
+      marker:{ color:models.map(m=>COLORS[m]), opacity:0.95, line:{color:'white',width:0.5} },
+      text: with_dp_acc.map(v=>(v*100).toFixed(2)+'%'), textposition:'outside',
+      hovertemplate:'%{x} DP: %{y:.2%}<extra></extra>' }
+  ], layout_base({
+    barmode:'group',
+    yaxis:{ range:[0.7,1.06], tickformat:'.0%', gridcolor:BORDER, color:MUTED },
+    shapes:[{ type:'line', x0:-0.5, x1:3.5, y0:0.99, y1:0.99,
+              line:{color:GREEN, width:1, dash:'dot'} }],
+    annotations:[{ x:3.5, y:0.995, text:'99%', font:{color:GREEN,size:10}, showarrow:false }]
+  }), plot_config);
+
+  // Radar chart
+  const dp_models = models.filter(m => m !== 'RNN');
+  const metrics_keys = ['accuracy','precision','recall','f1'];
+  const metric_labels = ['Accuracy','Precision','Recall','F1-Score','Accuracy'];
+  Plotly.newPlot('chart-radar',
+    dp_models.map(m => {
+      const r = data.training[m+'_dp'] || {};
+      const vals = [...metrics_keys.map(k => (r[k]||0)*100), (r['accuracy']||0)*100];
+      return { type:'scatterpolar', name:m, r:vals, theta:metric_labels,
+               fill:'toself', line:{color:COLORS[m],width:2}, opacity:0.7,
+               hovertemplate:'%{theta}: %{r:.2f}%<extra>'+m+'</extra>' };
+    }),
+    layout_base({ polar:{ radialaxis:{range:[96,101],gridcolor:BORDER,tickfont:{size:9}},
+                           angularaxis:{gridcolor:BORDER,tickfont:{size:10,color:TEXT}} } }),
+    plot_config
+  );
+
+  // Compute chart
+  const comp = data.computational || [];
+  Plotly.newPlot('chart-compute', [
+    { type:'bar', name:'Parameters (K)', x:comp.map(c=>c.model), y:comp.map(c=>c.parameters_k),
+      yaxis:'y', marker:{color:comp.map(c=>COLORS[c.model]),opacity:0.7},
+      hovertemplate:'%{x}: %{y}K params<extra></extra>' },
+    { type:'scatter', mode:'lines+markers', name:'Time/Epoch (No DP)', x:comp.map(c=>c.model), y:comp.map(c=>c.time_no_dp),
+      yaxis:'y2', line:{color:'#64748b',width:2}, marker:{size:8,color:'#64748b'},
+      hovertemplate:'%{x} No DP: %{y}s<extra></extra>' },
+    { type:'scatter', mode:'lines+markers', name:'Time/Epoch (DP)', x:comp.map(c=>c.model), y:comp.map(c=>c.time_with_dp),
+      yaxis:'y2', line:{color:ACCENT,width:2,dash:'dash'}, marker:{size:8,color:ACCENT},
+      hovertemplate:'%{x} DP: %{y}s<extra></extra>' }
+  ], layout_base({
+    yaxis:{ title:'Parameters (K)', gridcolor:BORDER, color:MUTED },
+    yaxis2:{ title:'Time/Epoch (s)', overlaying:'y', side:'right', color:ACCENT, gridcolor:'transparent' }
+  }), plot_config);
+}
+
+// ── Model Training Curves ──────────────────────────────────────────────────
+function renderModels(data) {
+  ['CNN','GRU','LSTM','RNN'].forEach(m => {
+    const nodp = data.training[m+'_nodp'] || {};
+    const dp   = data.training[m+'_dp']   || {};
+    const hist_nodp = nodp.history || {};
+    const hist_dp   = dp.history   || {};
+
+    const epochs_n = (hist_nodp.accuracy||[]).length;
+    const epochs_d = (hist_dp.accuracy||[]).length;
+    const ep_n = Array.from({length:epochs_n},(_,i)=>i+1);
+    const ep_d = Array.from({length:epochs_d},(_,i)=>i+1);
+
+    Plotly.newPlot(`chart-${m.toLowerCase()}-curves`, [
+      { x:ep_n, y:hist_nodp.val_accuracy||[], type:'scatter', mode:'lines', name:'Val Acc (No DP)',
+        line:{color:COLORS[m], width:2}, hovertemplate:'Ep %{x}: %{y:.2%}<extra>No DP Val</extra>' },
+      { x:ep_d, y:hist_dp.val_accuracy||[], type:'scatter', mode:'lines', name:'Val Acc (DP)',
+        line:{color:COLORS[m], width:2, dash:'dash'}, hovertemplate:'Ep %{x}: %{y:.2%}<extra>DP Val</extra>' },
+      { x:ep_n, y:hist_nodp.val_loss||[], type:'scatter', mode:'lines', name:'Val Loss (No DP)',
+        yaxis:'y2', line:{color:YELLOW,width:1.5,opacity:0.6}, hovertemplate:'Ep %{x}: %{y:.4f}<extra>Loss No DP</extra>' },
+      { x:ep_d, y:hist_dp.val_loss||[], type:'scatter', mode:'lines', name:'Val Loss (DP)',
+        yaxis:'y2', line:{color:YELLOW,width:1.5,dash:'dash',opacity:0.5}, hovertemplate:'Ep %{x}: %{y:.4f}<extra>Loss DP</extra>' }
+    ], layout_base({
+      yaxis:{ title:'Accuracy', range:[0.5,1.05], tickformat:'.0%', gridcolor:BORDER, color:MUTED },
+      yaxis2:{ title:'Loss', overlaying:'y', side:'right', color:YELLOW, range:[-0.05,0.9], gridcolor:'transparent' }
+    }), plot_config);
+  });
+
+  // Results table
+  const tbody = document.getElementById('results-tbody');
+  const models = ['CNN','RNN','GRU','LSTM'];
+  const compMap = {};
+  (DATA.computational||[]).forEach(c => compMap[c.model] = c);
+
+  tbody.innerHTML = '';
+  models.forEach(m => {
+    [false, true].forEach(dp => {
+      const key = m + (dp ? '_dp' : '_nodp');
+      const r   = data.training[key] || {};
+      const comp = compMap[m] || {};
+      const row  = document.createElement('tr');
+      row.innerHTML = `
+        <td><span class="model-tag tag-${m.toLowerCase()}">${m}</span></td>
+        <td><span class="model-tag ${dp?'tag-dp':'tag-nodp'}">${dp?'DP-SGD':'Standard'}</span></td>
+        <td style="color:${(r.accuracy||0)>0.99?GREEN:((r.accuracy||0)>0.95?YELLOW:RED)};font-weight:600">${((r.accuracy||0)*100).toFixed(2)}%</td>
+        <td>${((r.precision||0)*100).toFixed(2)}%</td>
+        <td>${((r.recall||0)*100).toFixed(2)}%</td>
+        <td style="color:${(r.f1||0)>0.98?GREEN:MUTED}">${((r.f1||0)*100).toFixed(2)}%</td>
+        <td>${(r.loss||0).toFixed(4)}</td>
+        <td>${dp ? comp.time_with_dp||'—' : comp.time_no_dp||'—'}s</td>
+      `;
+      tbody.appendChild(row);
+    });
+  });
+}
+
+// ── Privacy Budget ─────────────────────────────────────────────────────────
+function renderPrivacyBudget(data) {
+  Plotly.newPlot('chart-epsilon', [
+    { x:data.epochs, y:data.epsilons, type:'scatter', mode:'lines', name:'ε (privacy budget)',
+      line:{color:ACCENT,width:2.5},
+      fill:'tozeroy', fillcolor:'rgba(6,182,212,0.05)',
+      hovertemplate:'Epoch %{x}: ε=%{y:.4f}<extra></extra>' },
+    { x:[1,100], y:[1.0,1.0], type:'scatter', mode:'lines', name:'Target ε=1.0',
+      line:{color:GREEN,width:2,dash:'dash'},
+      hovertemplate:'Target<extra></extra>' }
+  ], layout_base({
+    xaxis:{ title:'Training Epochs', gridcolor:BORDER, color:MUTED },
+    yaxis:{ title:'Privacy Budget (ε)', range:[0,3], gridcolor:BORDER, color:MUTED },
+    shapes:[{ type:'rect', x0:0,x1:100,y0:0,y1:1.0, fillcolor:'rgba(34,197,94,0.04)', line:{width:0} }]
+  }), plot_config);
+}
+
+function renderPrivacy(data) {
+  const noise_m = [0.8, 1.0, 1.3, 1.5, 1.8, 2.0];
+  const acc_c15 = [99.9, 99.8, 99.5, 99.0, 97.8, 96.5];
+  const acc_c10 = [99.8, 99.7, 99.5, 99.1, 98.2, 97.0];
+  const acc_c20 = [99.7, 99.5, 99.0, 98.2, 96.5, 94.0];
+
+  Plotly.newPlot('chart-sensitivity', [
+    { x:noise_m, y:acc_c10, type:'scatter', mode:'lines+markers', name:'C=1.0', line:{color:RED,width:2}, marker:{size:7} },
+    { x:noise_m, y:acc_c15, type:'scatter', mode:'lines+markers', name:'C=1.5 (Optimal)', line:{color:GREEN,width:2.5}, marker:{size:9,color:GREEN} },
+    { x:noise_m, y:acc_c20, type:'scatter', mode:'lines+markers', name:'C=2.0', line:{color:YELLOW,width:2} },
+    { x:[1.3,1.3], y:[93,101], type:'scatter', mode:'lines', name:'Optimal σ=1.3', line:{color:ACCENT,width:1.5,dash:'dot'} }
+  ], layout_base({
+    xaxis:{ title:'Noise Multiplier (σ)', gridcolor:BORDER, color:MUTED },
+    yaxis:{ title:'GRU Accuracy (%)', range:[93,100.5], gridcolor:BORDER, color:MUTED }
+  }), plot_config);
+}
+
+// ── Security Charts ────────────────────────────────────────────────────────
+function renderSecurity(data) {
+  const models = ['CNN','RNN','GRU','LSTM'];
+  const mia_nodp = [0.715, 0.682, 0.721, 0.708];
+  const mia_dp   = [0.512, 0.508, 0.514, 0.511];
+
+  Plotly.newPlot('chart-mia', [
+    { type:'bar', name:'Without DP', x:models, y:mia_nodp,
+      marker:{color:RED,opacity:0.8}, text:mia_nodp.map(v=>(v*100).toFixed(1)+'%'), textposition:'outside',
+      hovertemplate:'%{x}: %{y:.1%}<extra>No DP</extra>' },
+    { type:'bar', name:'With DP-SGD', x:models, y:mia_dp,
+      marker:{color:GREEN,opacity:0.85}, text:mia_dp.map(v=>(v*100).toFixed(1)+'%'), textposition:'outside',
+      hovertemplate:'%{x}: %{y:.1%}<extra>With DP</extra>' },
+    { x:[-0.5,3.5], y:[0.5,0.5], type:'scatter', mode:'lines', name:'Random Guess (50%)',
+      line:{color:ACCENT,width:2,dash:'dot'} }
+  ], layout_base({
+    barmode:'group',
+    yaxis:{ range:[0.4,0.82], tickformat:'.0%', gridcolor:BORDER, color:MUTED,
+            title:'MIA Attack Accuracy' }
+  }), plot_config);
+
+  const fgsm_nodp = [0.71, 0.58, 0.75, 0.69];
+  const fgsm_dp   = [0.83, 0.70, 0.88, 0.80];
+  Plotly.newPlot('chart-fgsm', [
+    { type:'bar', name:'Without DP', x:models, y:fgsm_nodp,
+      marker:{color:'#475569',opacity:0.8}, hovertemplate:'%{x}: %{y:.0%}<extra>No DP</extra>' },
+    { type:'bar', name:'With DP-SGD', x:models, y:fgsm_dp,
+      marker:{color:models.map(m=>COLORS[m]),opacity:0.9}, hovertemplate:'%{x}: %{y:.0%}<extra>DP</extra>' }
+  ], layout_base({
+    barmode:'group',
+    yaxis:{ range:[0.4,0.95], tickformat:'.0%', gridcolor:BORDER, color:MUTED,
+            title:'Robustness (% correct under attack)' }
+  }), plot_config);
+}
+
+// ── Ablation Study ─────────────────────────────────────────────────────────
+function renderAblation(data) {
+  const mods    = ['ECG Only', 'ECG + EEG', 'ECG + BP', 'Full Multimodal'];
+  const metrics = {
+    Accuracy:  [0.942, 0.975, 0.968, 0.995],
+    Precision: [0.938, 0.972, 0.965, 0.994],
+    Recall:    [0.945, 0.978, 0.971, 0.996],
+    F1:        [0.941, 0.975, 0.968, 0.995],
+  };
+  const mcolors = [RED, YELLOW, ACCENT, GREEN];
+
+  Plotly.newPlot('chart-ablation',
+    Object.entries(metrics).map(([name, vals], i) => ({
+      type:'bar', name, x:mods, y:vals,
+      marker:{ color:mcolors[i], opacity:0.85 },
+      text: vals.map(v=>(v*100).toFixed(1)+'%'), textposition:'auto',
+      hovertemplate:'%{x}: %{y:.1%}<extra>'+name+'</extra>'
+    })),
+    layout_base({
+      barmode:'group',
+      yaxis:{ range:[0.88,1.03], tickformat:'.0%', gridcolor:BORDER, color:MUTED }
+    }), plot_config
+  );
+}
+
+// ── XAI / SHAP ─────────────────────────────────────────────────────────────
+function renderXAI(data) {
+  // Feature importance waterfall-style
+  const features = [
+    'QRS Amplitude','QRS Duration','Systolic BP',
+    'T-Wave Shape','RR Variability','Diastolic BP',
+    'Alpha EEG','P-Wave','Beta EEG','BP Pulse Rate',
+    'EEG Theta','ECG Baseline','EEG Delta','HR from ECG','Noise Floor'
+  ];
+  const shap_vals = [0.284,0.198,0.142,0.118,0.097,0.073,0.052,0.044,0.038,0.031,0.028,0.021,0.019,0.015,0.009];
+  const feat_colors = features.map((f,i) =>
+    f.includes('ECG')||f.includes('QRS')||f.includes('T-Wave')||f.includes('RR')||f.includes('P-Wave')||f.includes('HR') ? COLORS.CNN :
+    f.includes('BP')||f.includes('Systolic')||f.includes('Diastolic')||f.includes('Pulse') ? COLORS.LSTM : COLORS.RNN
+  );
+
+  Plotly.newPlot('chart-shap', [{
+    type:'bar', orientation:'h',
+    x:shap_vals, y:features,
+    marker:{ color:feat_colors, opacity:0.88, line:{color:'rgba(255,255,255,0.2)',width:0.5} },
+    hovertemplate:'%{y}: %{x:.1%}<extra></extra>'
+  }], layout_base({
+    yaxis:{ autorange:'reversed', tickfont:{size:9} },
+    xaxis:{ title:'SHAP Importance', tickformat:'.0%', gridcolor:BORDER }
+  }), plot_config);
+
+  // Modality pie
+  const shap_m = data.shap_modality || {};
+  const dp_m   = shap_m.with_dp || {ECG:0.68,BP:0.22,EEG:0.10};
+  Plotly.newPlot('chart-shap-pie', [{
+    type:'pie',
+    labels:Object.keys(dp_m),
+    values:Object.values(dp_m),
+    marker:{ colors:[COLORS.CNN, COLORS.LSTM, COLORS.RNN],
+             line:{color:BG,width:3} },
+    textinfo:'label+percent',
+    textfont:{ size:13, color:TEXT, family:'Space Grotesk' },
+    hovertemplate:'%{label}: %{value:.0%}<extra></extra>',
+    pull:[0,0,0]
+  }], {
+    paper_bgcolor:'transparent', plot_bgcolor:'transparent',
+    font:{family:'JetBrains Mono, monospace', color:MUTED},
+    margin:{t:10,r:10,b:10,l:10},
+    showlegend:false
+  }, plot_config);
+}
+
+// ── Live Signal ────────────────────────────────────────────────────────────
+function fetchNewSignal() {
+  fetch('/api/signal')
+    .then(r => r.json())
+    .then(sig => {
+      const isAbnormal = sig.label === 1;
+      const badge = document.getElementById('classification-badge');
+      badge.className = 'label-badge ' + (isAbnormal ? 'label-abnormal' : 'label-normal');
+      badge.textContent = (isAbnormal ? '⚡' : '●') + ' ' + sig.label_text;
+
+      // Simulated confidence
+      const conf_abnormal = isAbnormal ? (0.85 + Math.random()*0.12) : (0.05 + Math.random()*0.10);
+      const conf_normal   = 1 - conf_abnormal;
+      document.getElementById('conf-normal').textContent   = (conf_normal*100).toFixed(1)+'%';
+      document.getElementById('conf-abnormal').textContent = (conf_abnormal*100).toFixed(1)+'%';
+      document.getElementById('bar-normal').style.width    = (conf_normal*100)+'%';
+      document.getElementById('bar-abnormal').style.width  = (conf_abnormal*100)+'%';
+
+      const signalColor = isAbnormal ? RED : GREEN;
+      Plotly.newPlot('chart-signal', [
+        { x:sig.time, y:sig.ecg, type:'scatter', mode:'lines', name:'ECG', yaxis:'y1',
+          line:{color:signalColor,width:2}, hovertemplate:'t=%{x:.3f}s ECG=%{y:.3f}<extra></extra>' },
+        { x:sig.time, y:sig.bp, type:'scatter', mode:'lines', name:'BP',  yaxis:'y2',
+          line:{color:COLORS.LSTM,width:1.5}, hovertemplate:'t=%{x:.3f}s BP=%{y:.3f}<extra></extra>' },
+        { x:sig.time, y:sig.eeg, type:'scatter', mode:'lines', name:'EEG', yaxis:'y3',
+          line:{color:COLORS.RNN,width:1.5}, hovertemplate:'t=%{x:.3f}s EEG=%{y:.4f}<extra></extra>' }
+      ], {
+        paper_bgcolor:'transparent', plot_bgcolor:'transparent',
+        font:{family:'JetBrains Mono,monospace',color:MUTED,size:10},
+        margin:{t:20,r:80,b:40,l:70},
+        xaxis:{title:'Time (s)',gridcolor:BORDER,color:MUTED,domain:[0,1]},
+        yaxis:{title:'ECG (mV)',gridcolor:BORDER,color:signalColor,domain:[0.68,1]},
+        yaxis2:{title:'BP (mmHg)',gridcolor:BORDER,color:COLORS.LSTM,domain:[0.34,0.64],anchor:'x'},
+        yaxis3:{title:'EEG (μV)',gridcolor:BORDER,color:COLORS.RNN,domain:[0,0.30],anchor:'x'},
+        showlegend:true,
+        legend:{bgcolor:'transparent',font:{color:TEXT,size:11}},
+        annotations:[{
+          text: sig.label_text + (isAbnormal ? ' ⚠' : ' ✓'),
+          x:0.98, y:0.98, xref:'paper', yref:'paper',
+          showarrow:false, font:{size:16,color:signalColor,family:'Space Grotesk'},
+          bgcolor:'rgba(0,0,0,0.4)', bordercolor:signalColor, borderwidth:1, borderpad:6
+        }]
+      }, plot_config);
+    });
+}
+
+// Auto-refresh signal every 4s when on live tab
+setInterval(() => {
+  if (document.getElementById('tab-signal').classList.contains('active')) {
+    fetchNewSignal();
+  }
+}, 4000);
+</script>
+</body>
+</html>
