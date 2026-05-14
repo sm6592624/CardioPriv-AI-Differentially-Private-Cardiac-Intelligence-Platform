@@ -15,9 +15,8 @@ import json
 
 BANNER = """
 ╔══════════════════════════════════════════════════════════╗
-║  CAPSTONE PROJECT — QUICK SETUP & LAUNCH               ║
+║  QUICK SETUP & LAUNCH                                  ║
 ║  Privacy-Preserving Heartbeat Classification           ║
-║  NIET, Greater Noida — IT Department                   ║
 ╚══════════════════════════════════════════════════════════╝
 """
 

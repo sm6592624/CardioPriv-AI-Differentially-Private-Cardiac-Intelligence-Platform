@@ -23,9 +23,6 @@ BANNER = """
 ║  Privacy-Preserving Heartbeat Abnormality Classification                    ║
 ║  Using Differentially Private Deep Learning Models                          ║
 ╠══════════════════════════════════════════════════════════════════════════════╣
-║  Authors:     Saransh Mishra | Satyam Chaubey | Abhiraj Singh              ║
-║  Supervisor:  Dr. Prabha S. Nair                                            ║
-║  Institution: NIET, Greater Noida — Department of Information Technology    ║
 ║  Reference:   ElKomy et al., Journal of Big Data (2025) 12:216             ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 """
