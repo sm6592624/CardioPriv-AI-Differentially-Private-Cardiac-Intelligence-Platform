@@ -8,11 +8,6 @@
 [![TensorFlow 2.10+](https://img.shields.io/badge/TensorFlow-2.10%2B-orange)](https://www.tensorflow.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Authors:** [Saransh Mishra](#authors) | [Satyam Chaubey](#authors) | [Abhiraj Singh](#authors)  
-**Supervisor:** Dr. Prabha S. Nair  
-**Institution:** Noida Institute of Engineering and Technology (NIET), Greater Noida  
-**Department:** Information Technology
-
 [🎯 Quick Start](#-quick-start) • [📖 Documentation](#-documentation) • [🔬 Methodology](#-methodology) • [📊 Results](#-results)
 
 </div>
@@ -21,7 +16,7 @@
 
 ## 📝 Project Overview
 
-This capstone project demonstrates **privacy-preserving machine learning** applied to medical heartbeat classification. We implement **Differentially Private Stochastic Gradient Descent (DP-SGD)** to train deep learning models with formal privacy guarantees, ensuring patient data remains protected while maintaining high classification accuracy.
+This capstone project demonstrates **privacy-preserving machine learning** applied to medical heartbeat classification. We implement **Differentially Private Stochastic Gradient Descent (DP-SGD)** to defend against privacy attacks while delivering robust deep learning results on sensitive patient data.
 
 **Key Innovation:** We achieve **99.59% accuracy with privacy budget ε = 1.0**, proving that strong privacy protection and model performance are not mutually exclusive.
 
@@ -139,7 +134,7 @@ heartbeat_privacy_project/
 └── static/
     ├── css/                        # Dashboard styling
     └── js/                         # Interactive charts
-
+ 
 ```
 
 ---
@@ -442,18 +437,6 @@ This project is licensed under the MIT License — see [LICENSE](LICENSE) file f
 
 ---
 
-## 👥 Authors
-
-| Name | Role | Email |
-|------|------|-------|
-| **Saransh Mishra** | Lead Developer | saransh@niet.ac.in |
-| **Satyam Chaubey** | Co-Developer | satyam@niet.ac.in |
-| **Abhiraj Singh** | Co-Developer | abhiraj@niet.ac.in |
-
-**Supervisor:** Dr. Prabha S. Nair, Department of Information Technology, NIET
-
----
-
 ## ❓ FAQ
 
 **Q: Do I need a GPU?**  
@@ -484,51 +467,9 @@ A: Yes, edit `src/differential_privacy.py::DPConfig` class. Higher ε = weaker p
 
 **⭐ If this project helped you, please consider starring the repository!**
 
-For questions or issues, please open a GitHub Issue or contact the authors.
+For questions or issues, please open a GitHub Issue.
 
 ---
 
 *Last Updated: May 2026*  
 *Version: 1.0.0*
-│   ├── explainability.py      # SHAP analysis
-│   └── visualizer.py          # Plots and result charts
-│
-├── data/                      # Dataset (auto-downloaded or simulated)
-├── models/                    # Saved model weights
-├── results/                   # Output metrics and plots
-│
-└── static/ & templates/       # Dashboard web files
-```
-
----
-
-## 🔬 Key Results
-
-| Model | Accuracy (No DP) | Accuracy (With DP) | MIA Attack (With DP) |
-|-------|-----------------|-------------------|----------------------|
-| GRU   | 98.99%          | **99.50%**        | 51.4% (≈ random)    |
-| CNN   | 99.91%          | 99.12%            | 51.2%               |
-| LSTM  | 98.85%          | 98.89%            | 51.1%               |
-| RNN   | 92.27%          | 79.60%            | 50.8%               |
-
----
-
-## ⚙️ Privacy Parameters
-
-| Parameter | Value | Description |
-|-----------|-------|-------------|
-| Noise Multiplier (σ) | 1.3 | Scale of Gaussian noise |
-| L2 Norm Clip (C) | 1.5 | Gradient clipping threshold |
-| Privacy Budget (ε) | 1.0 | Privacy guarantee |
-| Delta (δ) | 1×10⁻⁵ | Probability of privacy failure |
-
----
-
-## 📊 Dataset
-
-**MIT-BIH Polysomnographic Database** (PhysioNet)  
-- 18 records, ~80 hours of multimodal recordings  
-- Signals: ECG, EEG, Blood Pressure (BP)  
-- Access: https://physionet.org/content/slpdb/
-
-> **Note:** If the dataset is not available, the project auto-generates realistic synthetic data for demonstration purposes.
