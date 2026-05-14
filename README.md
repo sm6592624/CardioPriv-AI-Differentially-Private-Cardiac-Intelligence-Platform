@@ -437,18 +437,6 @@ This project is licensed under the MIT License — see [LICENSE](LICENSE) file f
 
 ---
 
-## 👥 Authors
-
-| Name | Role | Email |
-|------|------|-------|
-| **Saransh Mishra** | Lead Developer | saransh@niet.ac.in |
-| **Satyam Chaubey** | Co-Developer | satyam@niet.ac.in |
-| **Abhiraj Singh** | Co-Developer | abhiraj@niet.ac.in |
-
-**Supervisor:** Dr. Prabha S. Nair, Department of Information Technology, NIET
-
----
-
 ## ❓ FAQ
 
 **Q: Do I need a GPU?**  
